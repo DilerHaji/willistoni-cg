@@ -82,6 +82,8 @@ ggg <- ggarrange(equi_histA, equi_histB, equi_histC, equi_histD , equi_histEF, l
 ggsave("equi_hist.png", ggg)
 
 
+somethign
+
 
 
 
@@ -157,19 +159,41 @@ ggsave("will_mappings_heatmap.png", mappings_heatmap[["will.csv"]] )
 - Quantifying overlap between assembly contigs 
 ##################################################
 
+colnames(eqframe2[[1]])
+### "mullerA"  "mullerB"  "mullerC"  "mullerD"  "mullerEF"  ###
 names(eqframe2)
-i = "will.csv"
-eqframe2[[i]]
 
-m <- eqframe2[[i]][which(!is.na(eqframe2[[i]][,5])),]
-ctg <- unlist(lapply(str_split(rownames(m), ":"), "[", 1))
-csv <- read.csv(i, head = FALSE, stringsAsFactors = FALSE)
-csv2 <- csv[as.character(csv[,1]) %in% as.character(ctg),]
-csv2$order <- order(-csv2[,2])
+minimap_gg_plots <- list()
+for(i in names(eqframe2)) {
 
-ggplot(csv2, aes(V8, V2)) +
-	geom_point()
+	for(j in 1:5) {
+		if(is.null(rownames(eqframe2[[i]][which(!is.na(eqframe2[[i]][,j])),]))){
+			m <- names(which(!is.na(eqframe2[[i]][,j])))
+			ctg <- unlist(lapply(str_split(m, ":"), "[", 1))
+		} else {
+			m <- eqframe2[[i]][which(!is.na(eqframe2[[i]][,j])),]
+			ctg <- unlist(lapply(str_split(rownames(m), ":"), "[", 1))
 
+		}
+	
+	csv <- read.csv(i, head = FALSE, stringsAsFactors = FALSE)
+	csv$mull <- unlist(lapply(str_split(unlist(lapply(str_split(csv[,6], "-"), "[", 2)), "[.]"), "[", 1))
+	csv2 <- csv[as.character(csv[,1]) %in% as.character(ctg) & as.character(csv$mull) %in% as.character(colnames(eqframe2[[i]])[j]) & csv$V11 > 1000,]
+
+	g <- ggplot(csv2, aes(V8, V3, col = V1, size = V11)) +
+		geom_point() +
+		scale_color_brewer(palette = "Paired")
+	
+	name <- paste(i, j, sep = " : ")
+	minimap_gg_plots[[name]] <- g
+	
+	}
+	}
+
+
+for(i in 1:length(names(minimap_gg_plots))) {
+	ggsave(paste(names(minimap_gg_plots)[i], ".png", sep = ""), minimap_gg_plots[[i]])
+	}
 
 
 
