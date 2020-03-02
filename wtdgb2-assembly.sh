@@ -37,3 +37,8 @@ samtools view -F0x900 D.paulistorum.L06.bam | ../../wtdbg2/wtpoa-cns -t 16 -i D.
 samtools view -F0x900 D.paulistorum.L12.bam | ../../wtdbg2/wtpoa-cns -t 16 -i D.paulistorum.L12.raw.fa -fo D.paulistorum.L12.cns.fa
 
 ../		
+
+
+minimap2 -x map-ont layout.fasta escherichia_coli_map006_r7_3.fastq > m_1.paf
+racon escherichia_coli_map006_r7_3.fastq m_1.paf layout.fasta > consensus_1.fasta
+	
