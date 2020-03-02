@@ -4,7 +4,7 @@ library(stringr)
 library(tidyr)
 library(seqinr)
 
-setwd("~Desktop/Bernard-repeatmasked")
+setwd("/Users/dilerhaji/Desktop/willistoni-cg/Bernard-repeatmasked")
 
 
 
@@ -95,7 +95,7 @@ Heatmap of the number of minimap mappings to each muller element per assembly co
 against CAF1 ordered/oriented muller elements 
 ##################################################
 
-setwd("/Users/dilerhaji/Desktop/ont-genomes/Bernard-repeatmasked/minimap-asm20")
+setwd("/Users/dilerhaji/Desktop/willistoni-cg/Bernard-repeatmasked/minimap-asm20")
 
 
 library(stringr)
@@ -162,43 +162,44 @@ ggsave("will_mappings_heatmap.png", mappings_heatmap[["will.csv"]] )
 colnames(eqframe2[[1]])
 ### "mullerA"  "mullerB"  "mullerC"  "mullerD"  "mullerEF"  ###
 names(eqframe2)
+	
+for(j in c("equi.csv", "insu.csv", "paul.csv", "trop.csv", "will.csv")) {
 
-minimap_gg_plots <- list()
-for(i in names(eqframe2)) {
+	minimap_gg_plots <- list()
+	for(i in names(eqframe2)) {
 
-	for(j in 1:5) {
-		if(is.null(rownames(eqframe2[[i]][which(!is.na(eqframe2[[i]][,j])),]))){
-			m <- names(which(!is.na(eqframe2[[i]][,j])))
-			ctg <- unlist(lapply(str_split(m, ":"), "[", 1))
-		} else {
-			m <- eqframe2[[i]][which(!is.na(eqframe2[[i]][,j])),]
-			ctg <- unlist(lapply(str_split(rownames(m), ":"), "[", 1))
+		for(j in 1:5) {
+			if(is.null(rownames(eqframe2[[i]][which(!is.na(eqframe2[[i]][,j])),]))){
+				m <- names(which(!is.na(eqframe2[[i]][,j])))
+				ctg <- unlist(lapply(str_split(m, ":"), "[", 1))
+			} else {
+				m <- eqframe2[[i]][which(!is.na(eqframe2[[i]][,j])),]
+				ctg <- unlist(lapply(str_split(rownames(m), ":"), "[", 1))
 
+			}
+   
+		csv <- read.csv(i, head = FALSE, stringsAsFactors = FALSE)
+		csv$mull <- unlist(lapply(str_split(unlist(lapply(str_split(csv[,6], "-"), "[", 2)), "[.]"), "[", 1))
+		csv2 <- csv[as.character(csv[,1]) %in% as.character(ctg) & as.character(csv$mull) %in% as.character(colnames(eqframe2[[i]])[j]) & csv$V11 > 1000,]
+
+		g <- ggplot(csv2, aes(V8, V3, col = V1, size = V11)) +
+			geom_point() +
+			scale_color_brewer(palette = "Paired")
+   
+		name <- paste(i, j, sep = " : ")
+		minimap_gg_plots[[name]] <- g
+   
 		}
-	
-	csv <- read.csv(i, head = FALSE, stringsAsFactors = FALSE)
-	csv$mull <- unlist(lapply(str_split(unlist(lapply(str_split(csv[,6], "-"), "[", 2)), "[.]"), "[", 1))
-	csv2 <- csv[as.character(csv[,1]) %in% as.character(ctg) & as.character(csv$mull) %in% as.character(colnames(eqframe2[[i]])[j]) & csv$V11 > 1000,]
-
-	g <- ggplot(csv2, aes(V8, V3, col = V1, size = V11)) +
-		geom_point() +
-		scale_color_brewer(palette = "Paired")
-	
-	name <- paste(i, j, sep = " : ")
-	minimap_gg_plots[[name]] <- g
-	
-	}
-	}
+		}
 
 
-for(i in 1:length(names(minimap_gg_plots))) {
-	ggsave(paste(names(minimap_gg_plots)[i], ".png", sep = ""), minimap_gg_plots[[i]])
-	}
+	for(i in 1:length(names(minimap_gg_plots))) {
+		ggsave(paste(names(minimap_gg_plots)[i], ".png", sep = ""), minimap_gg_plots[[i]])
+		}
+		}
+		
 
 
-
-
-jbjkb
 
 
 mullerA_contigs <- unlist(lapply(str_split(rownames(eqframe2[[i]])[!is.na(eqframe2[[i]][,1] > 10)], ":"), "[", 1))
