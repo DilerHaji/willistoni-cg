@@ -1,0 +1,5 @@
+MUMmer3/show-coords -r -c -l -L 100 -I 50 promer-equi-dmel-test.delta > promer-equi-dmel-test.coords
+
+MUMmer3/mapview -n 1 -p mapview promer-equi-dmel-test.coords
+
+MUMmer3/mapview -n 1 -f pdf -p mapview promer-equi-dmel-test.coords
