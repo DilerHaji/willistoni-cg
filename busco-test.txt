@@ -1,0 +1,9 @@
+module load python 
+module load blast
+module load hmmer
+module load augustus
+module load prodigal
+chmod +x ../sepp/run_sepp.py 
+export PATH="/global/scratch/diler/software/sepp/run_sepp.py:$PATH"
+export BUSCO_CONFIG_FILE="/global/scratch/diler/software/busco/config/config.ini"
+
