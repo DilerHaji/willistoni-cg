@@ -198,6 +198,7 @@ for(i in 1:length(names(minimap_gg_plots))) {
 
 
 
+jbjkb
 
 
 mullerA_contigs <- unlist(lapply(str_split(rownames(eqframe2[[i]])[!is.na(eqframe2[[i]][,1] > 10)], ":"), "[", 1))
