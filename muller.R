@@ -82,7 +82,6 @@ ggg <- ggarrange(equi_histA, equi_histB, equi_histC, equi_histD , equi_histEF, l
 ggsave("equi_hist.png", ggg)
 
 
-somethign
 
 
 
@@ -97,7 +96,6 @@ against CAF1 ordered/oriented muller elements
 
 setwd("/Users/dilerhaji/Desktop/willistoni-cg/Bernard-repeatmasked/minimap-asm20")
 
-
 library(stringr)
 library(tidyr)
 library(ggplot2)
@@ -108,7 +106,8 @@ eqframe2 <- list()
 eqframe_plots <- list()
 mappings_heatmap <- list()
 
-for(i in system("ls", intern = TRUE)){
+for(i in system("ls *csv", intern = TRUE)){
+	
 	eq <- read.csv(i, head = FALSE, stringsAsFactors = FALSE)
 	eq$mull <- unlist(lapply(str_split(unlist(lapply(str_split(eq$V6, "-"), "[", 2)),"[.]"), "[", 1))
 	eq$ident <- eq[,10]/eq[,11]
@@ -186,7 +185,7 @@ for(j in c("equi.csv", "insu.csv", "paul.csv", "trop.csv", "will.csv")) {
 			geom_point() +
 			scale_color_brewer(palette = "Paired")
    
-		name <- paste(i, j, sep = " : ")
+		name <- paste(i, j, sep = "_")
 		minimap_gg_plots[[name]] <- g
    
 		}
@@ -229,77 +228,128 @@ system("seqkit grep -f mullerEF_contigs.txt D.equinoxialis.assembly.sm.fasta > e
 
 
 
+
 ##################################################
-- Candidate coding sequence set for blast 
+- Pairwise species comparisions (all vs all) 
 ##################################################
 
-caf <- read.csv("caf1-features.csv", stringsAsFactors = FALSE)
-
-#### Getting Dwill-caf1 contigs names for each muller element based on Schaeffer et al. 2006 GENETICS
-caf1A <- unlist(lapply(str_split(system("cat mullerA-caf1.fasta | grep -o '>.*'", intern = TRUE), ">"), "[", 2))
-caf1B <- unlist(lapply(str_split(system("cat mullerB-caf1.fasta | grep -o '>.*'", intern = TRUE), ">"), "[", 2))
-caf1C <- unlist(lapply(str_split(system("cat mullerC-caf1.fasta | grep -o '>.*'", intern = TRUE), ">"), "[", 2))
-caf1D <- unlist(lapply(str_split(system("cat mullerD-caf1.fasta | grep -o '>.*'", intern = TRUE), ">"), "[", 2))
-caf1EF <- unlist(lapply(str_split(system("cat mullerEF-caf1.fasta | grep -o '>.*'", intern = TRUE), ">"), "[", 2))
-
-cafall <- list(caf1A, caf1A, caf1C, caf1D, caf1EF)
-
-#### Getting just the mapped contigs (above) and CDS features 
-caf1A_fts <- caf[caf[,7] %in% caf1A & caf[,1] == "CDS", ]
-caf1B_fts <- caf[caf[,7] %in% caf1B & caf[,1] == "CDS", ]
-caf1C_fts <- caf[caf[,7] %in% caf1C & caf[,1] == "CDS", ]
-caf1D_fts <- caf[caf[,7] %in% caf1D & caf[,1] == "CDS", ]
-caf1EF_fts <- caf[caf[,7] %in% caf1EF & caf[,1] == "CDS", ]
-
-cafall_fts <- list(caf1A_fts, caf1B_fts, caf1C_fts, caf1D_fts, caf1EF_fts)
-
-#### Plotting distribution of CDS features and lengths across each contig 
-ggplot(caf1EF_fts, aes(x = end, y = feature_interval_length)) +
-	geom_point() +
-	facet_wrap(~genomic_accession, scale = "free_x")
+setwd("/Users/dilerhaji/Desktop/willistoni-cg/Bernard-repeatmasked/minimap-asm20")
 
 
-##### For each muller element (i) and contig (j), get 10 randomly picked CDS features and extract the coding sequence 
-for(i in 1:5){
-	for(j in 1:length(cafall[[i]])) {
-		scaff <- cafall[[i]][j]
-		fts <- cafall_fts[[i]][cafall_fts[[i]][,7] == scaff,]
-		fts_sub <- fts[round(runif(10, 1, dim(fts)[1])),]
-		gene_order <- fts_sub[order(fts_sub$start), 15]	
-		write.table(gene_order, "gene_order.txt", quote = FALSE, row.names = FALSE, col.names = FALSE)
-		system(paste("touch ", paste(scaff[1], "-", i, sep = ""), sep = ""))
-		system(paste("grep -A 1 -f gene_order.txt caf1-cds2.fna | grep -v -- '^--$'", " > ", paste(scaff[1], "-", i, sep = ""), sep = ""))
-			}	
+
+for(i in system("ls *csv", intern = TRUE)){
+	
+	i = "equi-trop.csv"
+	
+	eq <- read.csv(i, head = FALSE, stringsAsFactors = FALSE)
+	
+	ref <- read.csv(paste(unlist(lapply(str_split(i, "-"), "[", 1)), "caf1.csv", sep = "-"),  head = FALSE, stringsAsFactors = FALSE)
+	ref$mull <- unlist(lapply(str_split(unlist(lapply(str_split(ref$V6, "-"), "[", 2)),"[.]"), "[", 1))
+	
+	ref2 <- read.csv(paste(unlist(lapply(str_split(unlist(lapply(str_split(i, "-"), "[", 2)), "[.]" ), "[", 1)), "caf1.csv", sep = "-"),  head = FALSE, stringsAsFactors = FALSE)
+	ref2$mull <- unlist(lapply(str_split(unlist(lapply(str_split(ref2$V6, "-"), "[", 2)),"[.]"), "[", 1))
+
+	
+	### Muller element associated with the query contig 
+	### Associating each unique assembly contig to a muller element by finding muller element to which most bases mapped (max)
+	m1 <- aggregate(ref[,11], by = list(ref[,1], ref$mull), function(x){ sum(x) })
+	m1max_ref <- c()
+	for(i in unique(m1[,1])){ 
+		x <- m1[m1[,1] == i, ]
+		m1max_ref <- rbind(m1max_ref, c(i, x[x[,3] == max(x[,3]), 2]))
+		}
+	ref$mullmax <- m1max_ref[match(ref[,1], m1max_ref[,1]), 2]
+	eq$match1 <- match(eq[,1], ref[,1])
+	eq$muller1 <- ref[match(eq[,1], ref[,1]), "mullmax"]
+	
+	
+	### Muller element associated with the subject contig 
+	### Associating each unique assembly contig to a muller element by finding muller element to which most bases mapped (max)
+	m2 <- aggregate(ref2[,11], by = list(ref2[,1], ref2$mull), function(x){ sum(x) })
+	m1max_ref2 <- c()
+	for(i in unique(m2[,1])){ 
+		x <- m2[m2[,1] == i, ]
+		m1max_ref2 <- rbind(m1max_ref2, c(i, x[x[,3] == max(x[,3]), 2]))
+		}
+	ref2$mullmax <- m1max_ref2[match(ref2[,1], m1max_ref2[,1]), 2]
+	eq$match2 <- match(eq[,6], ref2[,1])
+	eq$muller2 <-  ref[match(eq[,6], ref2[,1]), "mullmax"]
+	
+	
+	eq <- eq[!is.na(eq$match1) & !is.na(eq$match2), ]
+	eq <- eq[eq$muller1 == eq$muller2, ]
+	eq$ident <- eq[,10]/eq[,11]
+	eq[,1] <- paste(eq[,1], paste(eq[,2], "bp", sep = ""), sep = ":  ")
+	
+
+	eq_query <- aggregate(eq[,11], by = list(eq[,1], eq$muller1), function(x){ sum(x) })
+	eq_subject <- aggregate(eq[,11], by = list(eq[,6], eq$muller2), function(x){ sum(x) })
+	len_query <- aggregate(eq[,2], by = list(eq[,1], eq$muller1), max)
+	len_subject <- aggregate(eq[,7], by = list(eq[,6], eq$muller2), max)
+	ident <-  aggregate(eq$ident, by = list(eq[,1], eq$muller1), function(x){mean(x)})
+
+
+	eqframe[[i]] <- data.frame(
+			eq_query_contigs = eq_query[,1],
+	 		eq_query = eq_query[,3],
+	 		eq_subject_contigs = eq_subject[,1],
+	 		eq_subject = eq_subject[,3],
+	 		muller = eq2[,2], 
+			len = len[,3], 
+			mapings = eq2[,3]*ident[,3], 
+			ident = ident[,3])
+			
+						
+	eqframe_plots[[i]] <- ggplot(eqframe[[i]], aes(x = mapings, y = ident, col = len)) + 
+								geom_point(size = 3) +
+								facet_wrap(~muller)
+
+	eqframe2[[i]] <- eqframe[[i]][eqframe[[i]]$mapings > 50, c(1,2,4)]
+	eqframe2[[i]] <- spread(eqframe2[[i]], key = 2, value = 3)
+	rownames(eqframe2[[i]]) <- eqframe2[[i]][,1]
+	eqframe2[[i]] <- eqframe2[[i]][order(-as.numeric(unlist(lapply(str_split(unlist(lapply(str_split(eqframe2[[i]][,1], ":"), "[", 2)), "bp"), "[", 1)))), ]
+	eqframe2[[i]] <- as.matrix(eqframe2[[i]][, 2:6])
+	eqframe2[[i]][is.na(eqframe2[[i]])] <- NA
+	mappings_heatmap[[i]] <- pheatmap(eqframe2[[i]], na_col = "white", color = c("white", "grey","yellow", "orange", "red", "red4"), breaks = c(0, 10, 100, 1000, 2000, 3000, 4000), fontsize = 4, cluster_rows = FALSE, cluster_cols = FALSE, cellwidth = 20)
+}
+
+
+
+
+
+
+for(j in c("equi.csv", "insu.csv", "paul.csv", "trop.csv", "will.csv")) {
+
+	minimap_gg_plots <- list()
+	for(i in names(eqframe2)) {
+
+		for(j in 1:5) {
+			if(is.null(rownames(eqframe2[[i]][which(!is.na(eqframe2[[i]][,j])),]))){
+				m <- names(which(!is.na(eqframe2[[i]][,j])))
+				ctg <- unlist(lapply(str_split(m, ":"), "[", 1))
+			} else {
+				m <- eqframe2[[i]][which(!is.na(eqframe2[[i]][,j])),]
+				ctg <- unlist(lapply(str_split(rownames(m), ":"), "[", 1))
+
+			}
+   
+		csv <- read.csv(i, head = FALSE, stringsAsFactors = FALSE)
+		csv$mull <- unlist(lapply(str_split(unlist(lapply(str_split(csv[,6], "-"), "[", 2)), "[.]"), "[", 1))
+		csv2 <- csv[as.character(csv[,1]) %in% as.character(ctg) & as.character(csv$mull) %in% as.character(colnames(eqframe2[[i]])[j]) & csv$V11 > 1000,]
+
+		g <- ggplot(csv2, aes(V8, V3, col = V1, size = V11)) +
+			geom_point() +
+			scale_color_brewer(palette = "Paired")
+   
+		name <- paste(i, j, sep = "_")
+		minimap_gg_plots[[name]] <- g
+   
+		}
 		}
 
 
-
-
-
-
-
-##################################################
-- Blasting to assembly contigs and extracting position information 
-##################################################
-
-caf1_cds <- read.fasta("caf1-cds-translated.fasta")
-
-str(caf1_cds)
-
-attr(caf1_cds[[2]], "name")
-length(caf1_cds[[2]])
-
-caf1_cds_len <- lapply(caf1_cds, length)
-caf1_cds_att <- lapply(caf1_cds, function(x){as.character(attr(x, "name"))})
-
-genes <- unlist(lapply(str_split(unlist(lapply(str_split(unlist(caf1_cds_att), "GeneID:"), "[", 2)), "]"), "[", 1))
-names(genes) <- 1:length(genes)
-length(genes) - length(unique(genes))
-
-for(i in unique(genes)){
-
-	genes[genes %in% i]
-
-}
-
-hist(table(genes), breaks = 100)
+	for(i in 1:length(names(minimap_gg_plots))) {
+		ggsave(paste(names(minimap_gg_plots)[i], ".png", sep = ""), minimap_gg_plots[[i]])
+		}
+		}
+		
