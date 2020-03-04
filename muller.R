@@ -3,6 +3,7 @@ library("ggpubr")
 library(stringr)
 library(tidyr)
 library(seqinr)
+library(data.table)
 
 setwd("/Users/dilerhaji/Desktop/willistoni-cg/Bernard-repeatmasked")
 
@@ -236,120 +237,157 @@ system("seqkit grep -f mullerEF_contigs.txt D.equinoxialis.assembly.sm.fasta > e
 setwd("/Users/dilerhaji/Desktop/willistoni-cg/Bernard-repeatmasked/minimap-asm20")
 
 
+map <- list()
+file_names <- system("ls *csv", intern = TRUE)
+file_names <- file_names[unlist(lapply(str_split(file_names, "-"), "[", 2)) != "caf1.csv"]
 
-for(i in system("ls *csv", intern = TRUE)){
+
+dat <- read.csv(file_names[2], head = FALSE, stringsAsFactors = FALSE)
+ref <- read.csv(paste(unlist(lapply(str_split(j, "-"), "[", 1)), "caf1.csv", sep = "-"),  head = FALSE, stringsAsFactors = FALSE)
+ref$mull <- unlist(lapply(str_split(unlist(lapply(str_split(ref$V6, "-"), "[", 2)),"[.]"), "[", 1))
+
+ref[match(dat[,1], ref[,1]), "mullmax"]
+
+
+plot(dat[,3], dat[,8], size = dat[,11])
+
+ggplot(dat, aes(x = V3, y = V8, size = V11)) +
+	geom_point()
+
+
+
+
+for(j in file_names){
+		
+	eq <- read.csv(j, head = FALSE, stringsAsFactors = FALSE)
 	
-	i = "equi-trop.csv"
-	
-	eq <- read.csv(i, head = FALSE, stringsAsFactors = FALSE)
-	
-	ref <- read.csv(paste(unlist(lapply(str_split(i, "-"), "[", 1)), "caf1.csv", sep = "-"),  head = FALSE, stringsAsFactors = FALSE)
+	ref <- read.csv(paste(unlist(lapply(str_split(j, "-"), "[", 1)), "caf1.csv", sep = "-"),  head = FALSE, stringsAsFactors = FALSE)
 	ref$mull <- unlist(lapply(str_split(unlist(lapply(str_split(ref$V6, "-"), "[", 2)),"[.]"), "[", 1))
 	
-	ref2 <- read.csv(paste(unlist(lapply(str_split(unlist(lapply(str_split(i, "-"), "[", 2)), "[.]" ), "[", 1)), "caf1.csv", sep = "-"),  head = FALSE, stringsAsFactors = FALSE)
+	ref2 <- read.csv(paste(unlist(lapply(str_split(unlist(lapply(str_split(j, "-"), "[", 2)), "[.]" ), "[", 1)), "caf1.csv", sep = "-"),  head = FALSE, stringsAsFactors = FALSE)
 	ref2$mull <- unlist(lapply(str_split(unlist(lapply(str_split(ref2$V6, "-"), "[", 2)),"[.]"), "[", 1))
 
 	
 	### Muller element associated with the query contig 
 	### Associating each unique assembly contig to a muller element by finding muller element to which most bases mapped (max)
-	m1 <- aggregate(ref[,11], by = list(ref[,1], ref$mull), function(x){ sum(x) })
-	m1max_ref <- c()
-	for(i in unique(m1[,1])){ 
-		x <- m1[m1[,1] == i, ]
-		m1max_ref <- rbind(m1max_ref, c(i, x[x[,3] == max(x[,3]), 2]))
-		}
-	ref$mullmax <- m1max_ref[match(ref[,1], m1max_ref[,1]), 2]
-	eq$match1 <- match(eq[,1], ref[,1])
-	eq$muller1 <- ref[match(eq[,1], ref[,1]), "mullmax"]
+		m1 <- aggregate(ref[,11], by = list(ref[,1], ref$mull), function(x){ mean(x) })
+		m1max_ref <- c()
+		for(i in unique(m1[,1])){ 
+			x <- m1[m1[,1] == i, ]
+			m1max_ref <- rbind(m1max_ref, c(i, x[x[,3] == max(x[,3]), 2]))
+			}
+		ref$mullmax <- m1max_ref[match(ref[,1], m1max_ref[,1]), 2]
+		eq$match1 <- match(eq[,1], ref[,1])
+		eq$muller1 <- ref[match(eq[,1], ref[,1]), "mullmax"]
 	
 	
 	### Muller element associated with the subject contig 
 	### Associating each unique assembly contig to a muller element by finding muller element to which most bases mapped (max)
-	m2 <- aggregate(ref2[,11], by = list(ref2[,1], ref2$mull), function(x){ sum(x) })
-	m1max_ref2 <- c()
-	for(i in unique(m2[,1])){ 
-		x <- m2[m2[,1] == i, ]
-		m1max_ref2 <- rbind(m1max_ref2, c(i, x[x[,3] == max(x[,3]), 2]))
-		}
-	ref2$mullmax <- m1max_ref2[match(ref2[,1], m1max_ref2[,1]), 2]
-	eq$match2 <- match(eq[,6], ref2[,1])
-	eq$muller2 <-  ref[match(eq[,6], ref2[,1]), "mullmax"]
+		m2 <- aggregate(ref2[,11], by = list(ref2[,1], ref2$mull), function(x){ mean(x) })
+		m1max_ref2 <- c()
+		for(i in unique(m2[,1])){ 
+			x <- m2[m2[,1] == i, ]
+			m1max_ref2 <- rbind(m1max_ref2, c(i, x[x[,3] == max(x[,3]), 2]))
+			}
+		ref2$mullmax <- m1max_ref2[match(ref2[,1], m1max_ref2[,1]), 2]
+		eq$match2 <- match(eq[,6], ref2[,1])
+		eq$muller2 <-  ref[match(eq[,6], ref2[,1]), "mullmax"]
 	
 	
 	eq <- eq[!is.na(eq$match1) & !is.na(eq$match2), ]
-	eq <- eq[eq$muller1 == eq$muller2, ]
+	#eq <- eq[eq$muller1 == eq$muller2, ]
 	eq$ident <- eq[,10]/eq[,11]
 	eq[,1] <- paste(eq[,1], paste(eq[,2], "bp", sep = ""), sep = ":  ")
 	
+	eq$comparison <- rep(j, dim(eq)[1])
+	map[[j]] <- eq
+	}
+save.image("3March20.RData")
 
-	eq_query <- aggregate(eq[,11], by = list(eq[,1], eq$muller1), function(x){ sum(x) })
-	eq_subject <- aggregate(eq[,11], by = list(eq[,6], eq$muller2), function(x){ sum(x) })
-	len_query <- aggregate(eq[,2], by = list(eq[,1], eq$muller1), max)
-	len_subject <- aggregate(eq[,7], by = list(eq[,6], eq$muller2), max)
-	ident <-  aggregate(eq$ident, by = list(eq[,1], eq$muller1), function(x){mean(x)})
+mapframe <- data.frame(data.table::rbindlist(map))
+
+ggplot(mapframe[mapframe[,"muller1"] == "mullerEF",], aes(x = V3, y = V8, col = muller2)) + 
+	geom_point(size = 0.2) +
+	facet_wrap(~comparison, scales = "free")
 
 
-	eqframe[[i]] <- data.frame(
-			eq_query_contigs = eq_query[,1],
-	 		eq_query = eq_query[,3],
-	 		eq_subject_contigs = eq_subject[,1],
-	 		eq_subject = eq_subject[,3],
-	 		muller = eq2[,2], 
-			len = len[,3], 
-			mapings = eq2[,3]*ident[,3], 
-			ident = ident[,3])
-			
-						
-	eqframe_plots[[i]] <- ggplot(eqframe[[i]], aes(x = mapings, y = ident, col = len)) + 
-								geom_point(size = 3) +
-								facet_wrap(~muller)
 
-	eqframe2[[i]] <- eqframe[[i]][eqframe[[i]]$mapings > 50, c(1,2,4)]
-	eqframe2[[i]] <- spread(eqframe2[[i]], key = 2, value = 3)
-	rownames(eqframe2[[i]]) <- eqframe2[[i]][,1]
-	eqframe2[[i]] <- eqframe2[[i]][order(-as.numeric(unlist(lapply(str_split(unlist(lapply(str_split(eqframe2[[i]][,1], ":"), "[", 2)), "bp"), "[", 1)))), ]
-	eqframe2[[i]] <- as.matrix(eqframe2[[i]][, 2:6])
-	eqframe2[[i]][is.na(eqframe2[[i]])] <- NA
-	mappings_heatmap[[i]] <- pheatmap(eqframe2[[i]], na_col = "white", color = c("white", "grey","yellow", "orange", "red", "red4"), breaks = c(0, 10, 100, 1000, 2000, 3000, 4000), fontsize = 4, cluster_rows = FALSE, cluster_cols = FALSE, cellwidth = 20)
+
+
+
+
+
+
+
+#########################################
+## Getting chains of colinear mappings 
+#########################################
+
+file_names <- system("ls *csv", intern = TRUE)
+file_names <- file_names[unlist(lapply(str_split(file_names, "-"), "[", 2)) != "caf1.csv"]
+
+map_matching <- list()
+
+for(j in file_names){
+ dat <- read.csv(j, head = FALSE, stringsAsFactors = FALSE)
+ ref <- read.csv(paste(unlist(lapply(str_split(j, "-"), "[", 1)), "caf1.csv", sep = "-"),  head = FALSE, stringsAsFactors = FALSE)
+ ref$mull <- unlist(lapply(str_split(unlist(lapply(str_split(ref$V6, "-"), "[", 2)),"[.]"), "[", 1))
+ ref2 <- read.csv(paste(unlist(lapply(str_split(unlist(lapply(str_split(j, "-"), "[", 2)), "[.]" ), "[", 1)), "caf1.csv", sep = "-"),  head = FALSE, stringsAsFactors = FALSE)
+ ref2$mull <- unlist(lapply(str_split(unlist(lapply(str_split(ref2$V6, "-"), "[", 2)),"[.]"), "[", 1))
+
+ query_muller <- function(x){
+	 mapping1 <- x[c(1,3)]
+	 query <- ref[ref[,1] %in% as.character(mapping1[1]),]
+	 dis1 <- abs(query[,3] - as.numeric(mapping1[2]))
+	 dis1min <- query[which(dis1 == min(dis1)),]
+	 if(dim(dis1min)[1] == 1) {
+		 return(c(dis1min[, "mull"], dis1min[, 8]))
+	 } else {
+		 return("NA")
+	 }
+	 }
+
+ subject_muller <- function(x){
+	 mapping2 <- x[c(6,8)]
+	 subject <- ref2[ref2[,1] %in% as.character(mapping2[1]),]
+	 dis2 <- abs(subject[,3] - as.numeric(mapping2[2]))
+	 dis2min <- subject[which(dis2 == min(dis2)),]
+	 if(dim(dis2min)[1] == 1) {
+		 return(c(dis2min[, "mull"], dis2min[, 8]))
+	 } else {
+		 return("NA")
+	 }
+	 } 
+
+ query_muller_out <- apply(head(dat, 1000), 1, query_muller)
+ subject_muller_out <- apply(head(dat, 1000), 1, subject_muller)
+
+ dat <- cbind(dat, query_muller_out, subject_muller_out)
+
+ map_matching[[j]] <- dat
+
 }
 
 
 
 
+dat$m1 <- ref[match(dat[,1], ref[,1]), "mull"]
+dat$m1 <- ref[match(dat[,1], ref[,1]), "V3"]
 
 
-for(j in c("equi.csv", "insu.csv", "paul.csv", "trop.csv", "will.csv")) {
-
-	minimap_gg_plots <- list()
-	for(i in names(eqframe2)) {
-
-		for(j in 1:5) {
-			if(is.null(rownames(eqframe2[[i]][which(!is.na(eqframe2[[i]][,j])),]))){
-				m <- names(which(!is.na(eqframe2[[i]][,j])))
-				ctg <- unlist(lapply(str_split(m, ":"), "[", 1))
-			} else {
-				m <- eqframe2[[i]][which(!is.na(eqframe2[[i]][,j])),]
-				ctg <- unlist(lapply(str_split(rownames(m), ":"), "[", 1))
-
-			}
-   
-		csv <- read.csv(i, head = FALSE, stringsAsFactors = FALSE)
-		csv$mull <- unlist(lapply(str_split(unlist(lapply(str_split(csv[,6], "-"), "[", 2)), "[.]"), "[", 1))
-		csv2 <- csv[as.character(csv[,1]) %in% as.character(ctg) & as.character(csv$mull) %in% as.character(colnames(eqframe2[[i]])[j]) & csv$V11 > 1000,]
-
-		g <- ggplot(csv2, aes(V8, V3, col = V1, size = V11)) +
-			geom_point() +
-			scale_color_brewer(palette = "Paired")
-   
-		name <- paste(i, j, sep = "_")
-		minimap_gg_plots[[name]] <- g
-   
-		}
-		}
+dat$m2 <- ref2[match(dat[,6], ref2[,1]), "mull"]
 
 
-	for(i in 1:length(names(minimap_gg_plots))) {
-		ggsave(paste(names(minimap_gg_plots)[i], ".png", sep = ""), minimap_gg_plots[[i]])
-		}
-		}
-		
+
+
+
+
+head(dat)
+
+dat <- dat[order(dat[,1], dat[,6], dat[,3]),]
+head(dat)
+
+mapbases <- aggregate(dat[,10]/dat[,11], by = list(dat[,1], dat[,6]), mean)
+mapbases[order(mapbases[,1], mapbases[,2], mapbases[,3]),]
+
+for(i in unique())
