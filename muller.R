@@ -327,7 +327,6 @@ file_names <- system("ls *csv", intern = TRUE)
 file_names <- file_names[unlist(lapply(str_split(file_names, "-"), "[", 2)) != "caf1.csv"]
 
 map_matching <- list()
-
 for(j in file_names){
  dat <- read.csv(j, head = FALSE, stringsAsFactors = FALSE)
  ref <- read.csv(paste(unlist(lapply(str_split(j, "-"), "[", 1)), "caf1.csv", sep = "-"),  head = FALSE, stringsAsFactors = FALSE)
