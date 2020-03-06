@@ -407,56 +407,38 @@ ref  <- read.csv(paste(unlist(lapply(str_split(j, "-"), "[", 1)), "caf1.csv", se
 ref$mull <- unlist(lapply(str_split(unlist(lapply(str_split(ref$V6, "-"), "[", 2)),"[.]"), "[", 1))
 
 
-refcont_ordered[345,]
+
 
 ref_chains <- c()
 for(i in names(table(ref[,1])[table(ref[,1]) > 50])){
 	refcont <- ref[ref[,1] == i, ]
 	refcont_ordered <- refcont[order(refcont[,3]), ]
 	chain <- c(1)
-	chain_counter <- 1
-	row <- 1
-	breaks <- c()
 	done = FALSE
 	chain_number = 0
 	while ( !done ) {
-	   
-		if((refcont_ordered[row, "mull"] != refcont_ordered[row+1, "mull"]) 
-		| (abs(refcont_ordered[row, 3] - refcont_ordered[row+1, 3]) > 100000) 
-		| (abs(refcont_ordered[row, 7] - refcont_ordered[row+1, 7]) > 100000) 
-		| (refcont_ordered[row, 3] > refcont_ordered[row+1, 3])) {
-	   
-			breaks <- c(breaks, "break")
-	   		chain_counter <- chain_counter
-	   		 
+		
+		if((refcont_ordered[length(chain), "mull"] != refcont_ordered[length(chain)+1, "mull"]) 
+		| (abs(refcont_ordered[length(chain), 3] - refcont_ordered[length(chain)+1, 3]) > 100000) 
+		| (abs(refcont_ordered[length(chain), 7] - refcont_ordered[length(chain)+1, 7]) > 100000) 
+		| (refcont_ordered[length(chain), 3] > refcont_ordered[length(chain)+1, 3])) {
+		
+			chain <- c(chain, paste("chain", chain_number, refcont_ordered[length(chain), "mull"], "break", sep = "_"))
+			chain_number <- chain_number + 1
+			
 			} else {
-	   
-			chain_number = length(breaks) + 1
-			chain <- c(chain, paste("chain", chain_number, refcont_ordered[row, "mull"], sep = "_"))
-			chain_counter <- chain_counter + 1
-			row <- row+1
+			
+			chain <- c(chain, paste("chain", chain_number, refcont_ordered[length(chain), "mull"], sep = "_"))
 
 			}	
 			done <- length(chain) == dim(refcont_ordered)[1]
 		}
-chain <- chain[-1,]	
+		
 ref_chains <- rbind(ref_chains, cbind(refcont_ordered, chain))
 }
 
 
-
-as.numeric()
-hist(table(ref_chains$chain), breaks = 1000)
-
-
-
-hist(table(unlist(lapply(str_split(chain, "_"), "[", 2))), breaks = 100)
-
-
-aggregate(refcont_ordered[,1], by = list(refcont_ordered[,1], refcont_ordered[, "mull"]), function(x){length(x)})
-
-
-
+hist(table(ref_chains[, "chain"]), breaks = 1000)
 
 
 
