@@ -323,70 +323,65 @@ ggplot(mapframe[mapframe[,"muller1"] == "mullerEF",], aes(x = V3, y = V8, col = 
 ## Getting chains of colinear mappings 
 #########################################
 
+library(stringr)
+
 file_names <- system("ls *csv", intern = TRUE)
 file_names <- file_names[unlist(lapply(str_split(file_names, "-"), "[", 2)) != "caf1.csv"]
 
-map_matching <- list()
-for(j in file_names){
- dat <- read.csv(j, head = FALSE, stringsAsFactors = FALSE)
+dats <- list()
+for(i in file_names){
+	dats[[i]] <- head(read.csv(i, head = FALSE, stringsAsFactors = FALSE))
+}
+
+
+query_muller <- function(x){
+	mapping1 <- x[c(1,3)]
+	if(!is.na(table(ref[,1] %in% as.character(mapping1[1]))[2])){
+		query <- ref[ref[,1] %in% as.character(mapping1[1]),]
+		dis1 <- abs(query[,3] - as.numeric(mapping1[2]))
+		dis1min <- query[which(dis1 == min(dis1[is.finite(dis1) & !is.na(dis1)])),]
+		if(dim(dis1min)[1] == 1){
+			return(dis1min[, "mull"])
+	} else { 
+		return("NA")
+	}
+	} else {
+	return("NA")
+	}
+}
+
+subject_muller <- function(x){
+	mapping2 <- x[c(6,8)]
+	if(!is.na(table(ref2[,1] %in% as.character(mapping2[1]))[2])){
+		subject <- ref2[ref2[,1] %in% as.character(mapping2[1]),]
+		dis2 <- abs(subject[,3] - as.numeric(mapping2[2]))
+		dis2min <- subject[which(dis2 == min(dis2[is.finite(dis2) & !is.na(dis2)])),]
+		if(dim(dis2min)[1] == 1){
+			return(dis2min[, "mull"])
+		} else { 
+			return("NA")
+		}
+	} else {
+		return("NA")
+	}
+}
+	
+map_match <- function(x){
+ dat <- x
  ref <- read.csv(paste(unlist(lapply(str_split(j, "-"), "[", 1)), "caf1.csv", sep = "-"),  head = FALSE, stringsAsFactors = FALSE)
  ref$mull <- unlist(lapply(str_split(unlist(lapply(str_split(ref$V6, "-"), "[", 2)),"[.]"), "[", 1))
  ref2 <- read.csv(paste(unlist(lapply(str_split(unlist(lapply(str_split(j, "-"), "[", 2)), "[.]" ), "[", 1)), "caf1.csv", sep = "-"),  head = FALSE, stringsAsFactors = FALSE)
  ref2$mull <- unlist(lapply(str_split(unlist(lapply(str_split(ref2$V6, "-"), "[", 2)),"[.]"), "[", 1))
-
- query_muller <- function(x){
-	 mapping1 <- x[c(1,3)]
-	 query <- ref[ref[,1] %in% as.character(mapping1[1]),]
-	 dis1 <- abs(query[,3] - as.numeric(mapping1[2]))
-	 dis1min <- query[which(dis1 == min(dis1)),]
-	 if(dim(dis1min)[1] == 1) {
-		 return(c(dis1min[, "mull"], dis1min[, 8]))
-	 } else {
-		 return("NA")
-	 }
-	 }
-
- subject_muller <- function(x){
-	 mapping2 <- x[c(6,8)]
-	 subject <- ref2[ref2[,1] %in% as.character(mapping2[1]),]
-	 dis2 <- abs(subject[,3] - as.numeric(mapping2[2]))
-	 dis2min <- subject[which(dis2 == min(dis2)),]
-	 if(dim(dis2min)[1] == 1) {
-		 return(c(dis2min[, "mull"], dis2min[, 8]))
-	 } else {
-		 return("NA")
-	 }
-	 } 
-
- query_muller_out <- apply(head(dat, 1000), 1, query_muller)
- subject_muller_out <- apply(head(dat, 1000), 1, subject_muller)
-
- dat <- cbind(dat, query_muller_out, subject_muller_out)
-
- map_matching[[j]] <- dat
-
+ query_muller_out <- (apply(dat, 1, query_muller))
+ subject_muller_out <- apply(dat, 1, subject_muller)
+ return(cbind(dat, 10, query_muller_out, subject_muller_out))
 }
 
+dats_done <- lapply(dats, map_match)
 
-
-
-dat$m1 <- ref[match(dat[,1], ref[,1]), "mull"]
-dat$m1 <- ref[match(dat[,1], ref[,1]), "V3"]
-
-
-dat$m2 <- ref2[match(dat[,6], ref2[,1]), "mull"]
+save.image("3March20.RData")
 
 
 
 
 
-
-head(dat)
-
-dat <- dat[order(dat[,1], dat[,6], dat[,3]),]
-head(dat)
-
-mapbases <- aggregate(dat[,10]/dat[,11], by = list(dat[,1], dat[,6]), mean)
-mapbases[order(mapbases[,1], mapbases[,2], mapbases[,3]),]
-
-for(i in unique())
