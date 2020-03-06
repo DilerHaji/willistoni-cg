@@ -319,20 +319,22 @@ ggplot(mapframe[mapframe[,"muller1"] == "mullerEF",], aes(x = V3, y = V8, col = 
 
 
 
-#########################################
-## Getting chains of colinear mappings 
-#########################################
+##########################################################
+For mappings between query and subject genomes 
+Matches mappings of the query genome to the CAF1 ref
+Matches mapping of the subject genome to the CAF1 ref
+Identifies CAF1 ref muller element associated with the query genome mappings
+Identifies CAF1 ref muller element associated with the subject genome mappings
+Filters out mappings in query and subject associated with mappings to different muller elements in the CAF1 ref
+Filters out mappings in query and subject not mapped to CAF1 ref 
+Returns muller element associated with each mapping for both query and subject 
+##########################################################
+
 
 library(stringr)
 
 file_names <- system("ls *csv", intern = TRUE)
 file_names <- file_names[unlist(lapply(str_split(file_names, "-"), "[", 2)) != "caf1.csv"]
-
-dats <- list()
-for(i in file_names){
-	dats[[i]] <- head(read.csv(i, head = FALSE, stringsAsFactors = FALSE))
-}
-
 
 query_muller <- function(x){
 	mapping1 <- x[c(1,3)]
@@ -365,21 +367,38 @@ subject_muller <- function(x){
 		return("NA")
 	}
 }
-	
-map_match <- function(x){
- dat <- x
- ref <- read.csv(paste(unlist(lapply(str_split(j, "-"), "[", 1)), "caf1.csv", sep = "-"),  head = FALSE, stringsAsFactors = FALSE)
- ref$mull <- unlist(lapply(str_split(unlist(lapply(str_split(ref$V6, "-"), "[", 2)),"[.]"), "[", 1))
- ref2 <- read.csv(paste(unlist(lapply(str_split(unlist(lapply(str_split(j, "-"), "[", 2)), "[.]" ), "[", 1)), "caf1.csv", sep = "-"),  head = FALSE, stringsAsFactors = FALSE)
- ref2$mull <- unlist(lapply(str_split(unlist(lapply(str_split(ref2$V6, "-"), "[", 2)),"[.]"), "[", 1))
- query_muller_out <- (apply(dat, 1, query_muller))
- subject_muller_out <- apply(dat, 1, subject_muller)
- return(cbind(dat, 10, query_muller_out, subject_muller_out))
+
+dats_done <- list()
+for(j in file_names){
+	dat <- read.csv(j, head = FALSE, stringsAsFactors = FALSE)
+	ref  <- read.csv(paste(unlist(lapply(str_split(j, "-"), "[", 1)), "caf1.csv", sep = "-"),  head = FALSE, stringsAsFactors = FALSE)
+	ref$mull <- unlist(lapply(str_split(unlist(lapply(str_split(ref$V6, "-"), "[", 2)),"[.]"), "[", 1))
+	ref2 <- read.csv(paste(unlist(lapply(str_split(unlist(lapply(str_split(j, "-"), "[", 2)), "[.]" ), "[", 1)), "caf1.csv", sep = "-"),  head = FALSE, stringsAsFactors = FALSE)
+	ref2$mull <- unlist(lapply(str_split(unlist(lapply(str_split(ref2$V6, "-"), "[", 2)),"[.]"), "[", 1))
+	query_muller_out <- (apply(dat, 1, query_muller))
+	subject_muller_out <- apply(dat, 1, subject_muller)
+	dats_done[[j]] <- cbind(dat, query_muller_out, subject_muller_out)
 }
 
-dats_done <- lapply(dats, map_match)
-
 save.image("3March20.RData")
+
+
+
+
+
+
+
+
+
+#########################################
+## Getting chains of colinear mappings 
+#########################################
+
+
+
+
+
+
 
 
 
